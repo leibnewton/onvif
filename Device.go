@@ -279,7 +279,7 @@ func (dev Device) callMethodDo(endpoint string, method interface{}) (*http.Respo
 	soap.AddAction()
 
 	//Auth Handling
-	if dev.params.Username != "" && dev.params.Password != "" {
+	if dev.params.Username != "" { // add security whether password is empty or not
 		soap.AddWSSecurity(dev.params.Username, dev.params.Password)
 	}
 
