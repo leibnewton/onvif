@@ -1134,12 +1134,16 @@ type TimeZone struct {
 	TZ xsd.Token `xml:"onvif:TZ"`
 }
 
+type TimeZoneLoose struct {
+	TZ xsd.Token
+}
+
 type SystemDateTime struct {
 	DateTimeType    SetDateTimeType
 	DaylightSavings xsd.Boolean
-	TimeZone        TimeZone
-	UTCDateTime     xsd.DateTime
-	LocalDateTime   xsd.DateTime
+	TimeZone        TimeZoneLoose
+	UTCDateTime     DateTimeLoose
+	LocalDateTime   DateTimeLoose
 	Extension       SystemDateTimeExtension
 }
 
@@ -1188,6 +1192,14 @@ type NetworkHost struct {
 	IPv6Address IPv6Address          `xml:"onvif:IPv6Address"`
 	DNSname     DNSName              `xml:"onvif:DNSname"`
 	Extension   NetworkHostExtension `xml:"onvif:Extension"`
+}
+
+type NetworkHostLoose struct {
+	Type        NetworkHostType
+	IPv4Address IPv4Address
+	IPv6Address IPv6Address
+	DNSname     DNSName
+	Extension   NetworkHostExtension
 }
 
 type NetworkHostType xsd.String
@@ -1440,8 +1452,8 @@ type DNSInformationExtension xsd.AnyType
 
 type NTPInformation struct {
 	FromDHCP    xsd.Boolean
-	NTPFromDHCP NetworkHost
-	NTPManual   NetworkHost
+	NTPFromDHCP NetworkHostLoose
+	NTPManual   NetworkHostLoose
 	Extension   NTPInformationExtension
 }
 
@@ -1869,4 +1881,21 @@ type Date struct {
 	Year  xsd.Int `xml:"onvif:Year"`
 	Month xsd.Int `xml:"onvif:Month"`
 	Day   xsd.Int `xml:"onvif:Day"`
+}
+
+type DateTimeLoose struct {
+	Time TimeLoose
+	Date DateLoose
+}
+
+type TimeLoose struct {
+	Hour   xsd.Int
+	Minute xsd.Int
+	Second xsd.Int
+}
+
+type DateLoose struct {
+	Year  xsd.Int
+	Month xsd.Int
+	Day   xsd.Int
 }
