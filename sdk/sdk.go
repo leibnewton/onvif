@@ -3,6 +3,7 @@ package sdk
 import (
 	"context"
 	"encoding/xml"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -24,6 +25,23 @@ var (
 	Logger = LoggerContext.Logger()
 )
 
+// sample xml:
+// <s:Fault>
+//   <s:Code><s:Value>s:Sender</s:Value><s:Subcode><s:Value>ter:NotAuthorized</s:Value></s:Subcode></s:Code>
+//   <s:Reason><s:Text xml:lang="en">Sender not Authorized. Invalid username or password!</s:Text></s:Reason>
+// </s:Fault>
+type Fault struct {
+	StatusCode int `xml:"-"`
+
+	Code    string `xml:">Value"`
+	Subcode string `xml:"Code>Subcode>Value"` // NotAuthorized,ActionNotSupported,...
+	Reason  string `xml:">Text"`
+}
+
+func (f Fault) Error() string {
+	return fmt.Sprintf("http-status: %d, code: %s/%s, detail: %s", f.StatusCode, f.Code, f.Subcode, f.Reason)
+}
+
 func ReadAndParse(ctx context.Context, httpReply *http.Response, reply interface{}, tag string) error {
 	Logger.Debug().
 		Str("msg", httpReply.Status).
@@ -37,6 +55,18 @@ func ReadAndParse(ctx context.Context, httpReply *http.Response, reply interface
 	}
 
 	httpReply.Body.Close()
+
+	type Envelope struct {
+		Fault Fault `xml:"Body>Fault"`
+	}
+	var envFault Envelope
+	envFault.Fault.StatusCode = httpReply.StatusCode
+	err = xml.Unmarshal(b, &envFault)
+	if err != nil {
+		return errors.Annotate(err, "decode fault info")
+	} else if envFault.Fault.StatusCode != 200 || len(envFault.Fault.Code) > 0 {
+		return &envFault.Fault
+	}
 
 	err = xml.Unmarshal(b, reply)
 	return errors.Annotate(err, "decode")
